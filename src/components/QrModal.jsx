@@ -1,10 +1,7 @@
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function QrModal({ eventId, onClose }) {
-  const url = `${window.location.origin.replace(
-    "cms",
-    "landing"
-  )}/event/${eventId}`;
+  const url = `https://event-landing-sigma.vercel.app/event/${eventId}`;
 
   const whatsappShare = () => {
     const text = encodeURIComponent(`Please fill the form: ${url}`);
