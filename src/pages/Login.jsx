@@ -1,49 +1,67 @@
 import { useState } from "react";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithCustomToken } from "firebase/auth";
 import { auth } from "../config/firebase";
+import axios from "axios";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isValidMobile = (m) => /^[0-9]{10}$/.test(m);
+
   const submit = async () => {
     setError("");
-    if (!email || !password) {
-      setError("Email and password are required");
+    if (!mobile || !password) {
+      setError("Mobile number and password are required");
+      return;
+    }
+
+    if (!isValidMobile(mobile)) {
+      setError("Enter a valid mobile number");
       return;
     }
 
     try {
       setLoading(true);
 
-      let userCredential;
-      if (isRegister) {
-        userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-      } else {
-        userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+      // First, get user info from backend
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        { mobile, password }
+      );
+
+      const { email, isAdmin, user } = res.data;
+
+      if (!email) {
+        throw new Error("No email received from server");
       }
 
+      console.log('Login response user data:', user);
+
+      // Now verify password with Firebase using signInWithEmailAndPassword
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Get ID token after successful authentication
       const token = await userCredential.user.getIdToken();
       localStorage.setItem("token", token);
+      localStorage.setItem("isAdmin", isAdmin ? "true" : "false");
+      localStorage.setItem("userName", user?.name || "User");
+      localStorage.setItem("userMobile", user?.mobile || mobile);
+      localStorage.setItem("userEmail", user?.email || email);
+      
+      console.log('Stored in localStorage:', {
+        userName: localStorage.getItem("userName"),
+        userEmail: localStorage.getItem("userEmail"),
+        userMobile: localStorage.getItem("userMobile")
+      });
 
       window.location.href = "/";
     } catch (err) {
       console.error(err);
-      setError(err.message.replace("Firebase:", ""));
+      const errorMessage = err.response?.data?.error || err.message || "Login failed";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,9 +75,7 @@ export default function Login() {
             Event Platform CMS
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {isRegister
-              ? "Create admin account"
-              : "Login to manage events"}
+            Login to manage events
           </p>
         </div>
 
@@ -70,14 +86,14 @@ export default function Login() {
         )}
 
         <label className="block text-sm font-medium mb-1">
-          Email
+          Mobile Number
         </label>
         <input
-          type="email"
-          placeholder="admin@example.com"
+          type="tel"
+          placeholder="10 digit mobile number"
           className="w-full border rounded-xl px-3 py-3 mb-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
         />
 
         <label className="block text-sm font-medium mb-1">
@@ -101,20 +117,21 @@ export default function Login() {
                 : "bg-indigo-600 hover:bg-indigo-700 text-white"
             }`}
         >
-          {loading
-            ? "Please wait..."
-            : isRegister
-            ? "Create Account"
-            : "Login"}
+          {loading ? "Please wait..." : "Login"}
         </button>
 
-        <p
-          onClick={() => setIsRegister(!isRegister)}
-          className="mt-6 text-sm text-center text-indigo-600 cursor-pointer hover:underline"
-        >
-          {isRegister
-            ? "Already have an account? Login"
-            : "New admin? Create account"}
+        <p className="mt-6 text-sm text-center text-indigo-600">
+          New admin?{" "}
+          <a href="/register" className="font-semibold hover:underline">
+            Create account
+          </a>
+        </p>
+
+        <p className="mt-3 text-sm text-center text-gray-600">
+          Forgot password?{" "}
+          <a href="/change-password" className="font-semibold text-indigo-600 hover:underline">
+            Reset here
+          </a>
         </p>
       </div>
     </div>
