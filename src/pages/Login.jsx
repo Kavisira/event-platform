@@ -120,19 +120,21 @@ export default function Login() {
           {loading ? "Please wait..." : "Login"}
         </button>
 
-        <p className="mt-6 text-sm text-center text-indigo-600">
-          New admin?{" "}
-          <a href="/register" className="font-semibold hover:underline">
-            Create account
+        <div className="mt-6 space-y-3">
+          <a
+            href="/register"
+            className="w-full block text-center py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold rounded-xl transition-colors"
+          >
+            Don't have an account? Sign up
           </a>
-        </p>
 
-        <p className="mt-3 text-sm text-center text-gray-600">
-          Forgot password?{" "}
-          <a href="/change-password" className="font-semibold text-indigo-600 hover:underline">
-            Reset here
-          </a>
-        </p>
+          <p className="text-sm text-center text-gray-600">
+            Forgot password?{" "}
+            <a href="/change-password" className="font-semibold text-indigo-600 hover:underline">
+              Reset here
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
